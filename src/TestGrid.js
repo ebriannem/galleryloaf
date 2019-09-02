@@ -1,20 +1,31 @@
 import React from "react";
 import _ from "lodash";
-import RGL, { Responsive, WidthProvider } from "react-grid-layout";
-import { GridItem } from "./GridItem";
-import { sizeMe } from "react-sizeme";
-import { EditorWindow } from "./editor/EditorWindow";
-import { ReadOnlyEditor } from "./editor/ReadOnlyEditor";
-import { stateToHTML } from "draft-js-export-html";
-import { EditorState } from "draft-js";
+import RGL, {Responsive, WidthProvider} from "react-grid-layout";
+import {GridItem} from "./GridItem";
+import {sizeMe} from "react-sizeme";
+import {EditorWindow} from "./editor/EditorWindow";
+import {stateToHTML} from "draft-js-export-html";
+import {convertFromRaw, convertToRaw} from "draft-js"
+import db from "./firebase/firebase";
 
 const ReactGridLayout = WidthProvider(RGL);
+
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
 
 export class BasicLayout extends React.Component {
   static defaultProps = {
     className: "layout",
     rowHeight: 50,
-    onLayoutChange: function(l) {
+    onLayoutChange: function (l) {
       localStorage.setItem("layout", JSON.stringify(l));
     }
   };
@@ -25,15 +36,18 @@ export class BasicLayout extends React.Component {
     this.state = {
       isDraggable: false,
       isResizable: false,
-      items: 1,
+      items: 0,
       layout: layout,
-      itemsContent: [{ title: "First", color: "#4a4e69" }],
+      itemsContent: [],
       cols: 10,
       adding: false
     };
 
-    this.store(this.state.itemsContent);
+    this.loadFromDb();
+    console.log("data:" + this.state.itemsContent + "count:" + this.state.items);
+
   }
+
 
   store = c => {
     localStorage.setItem("contents", JSON.stringify(c));
@@ -53,70 +67,54 @@ export class BasicLayout extends React.Component {
   generateDOM = () => {
     let stuff = this.state.itemsContent;
     let opener = this.openEditor;
-    return _.map(_.range(this.state.items), function(i) {
+    return _.map(_.range(this.state.items), function (i) {
       return (
-        <div key={i}>
-          <GridItem
-            index={i}
-            title={stuff[i].title}
-            image={stuff[i].image}
-            color={stuff[i].color}
-            logKey={opener}
-            content={stuff[i].content}
-          />
-        </div>
+          <div key={i}>
+            <GridItem
+                title={stuff[i].title}
+                color={stuff[i].color}
+                logKey={opener}
+                content={stuff[i].content ? convertFromRaw(stuff[i].content) : false}
+            />
+          </div>
       );
     });
   };
 
+  loadFromDb = () => {
+    db.collection("test").get().then((querySnapshot) => {
+      let documents = querySnapshot.docs.map((doc) => {
+            return (doc.data());
+          }
+      );
+      console.log(documents);
+      this.setState({
+        itemsContent: documents,
+        items: documents.length,
+      })
+    })
+  };
+
   addItem = item => {
-    let newC = [...JSON.parse(localStorage.getItem("contents")), item];
-    this.setState({
-      itemsContent: [...JSON.parse(localStorage.getItem("contents")), item],
-      layout: [
-        ...JSON.parse(localStorage.getItem("layout")),
-        this.randomLayout(this.state.items)
-      ],
-      items: this.state.items + 1
+    const key = item.title.hashCode();
+    db.collection("test").doc(item.title).set({
+      title: item.title,
+      content: convertToRaw(item.content),
+      color: item.color,
+      layout: this.randomLayout(key)
     });
-    this.store(newC);
+    this.loadFromDb();
   };
 
   triggerEditing = () =>
-    this.setState({
-      isResizable: !this.state.isResizable,
-      isDraggable: !this.state.isDraggable
-    });
-
-  addItemR = () =>
-    this.addItem({
-      title: "Title",
-      content: <p>Content</p>
-      // image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Doublecrestcorm14.jpg/170px-Doublecrestcorm14.jpg"
-    });
-
-  onResize = () => {
-    if (window.innerWidth < 500) {
       this.setState({
-        cols: Math.ceil(window.innerWidth / 100)
+        isResizable: !this.state.isResizable,
+        isDraggable: !this.state.isDraggable
       });
-    }
-    console.log(this.state.cols);
-  };
 
-  componentDidMount = () => {
-    this.onResize();
-  };
-  componentDidMount = () => {
-    window.addEventListener("resize", this.onResize);
-  };
-  componentWillUnmount = () => {
-    window.removeEventListener("resize", this.onResize);
-  };
-
-  generateLayout() {
+  generateLayout = () => {
     const p = this.props;
-    var layout = _.map(new Array(p.items), function(item, i) {
+    var layout = _.map(new Array(p.items), function (item, i) {
       const y = _.result(p, "y") || Math.ceil(Math.random() * 4) + 1;
       return {
         x: (i * 2) % 12,
@@ -152,62 +150,54 @@ export class BasicLayout extends React.Component {
   };
 
   setAdding = toggle => {
-    this.setState({ adding: toggle });
+    this.setState({adding: toggle});
   };
 
   setEditingOld = toggle => {
-    this.setState({ editingOld: toggle });
+    this.setState({editingOld: toggle});
   };
 
   updateText = (title, content, color) => {
     this.setEditingOld(false);
-    let newItem = { title: title, content: content, color: color };
-    console.log(stateToHTML(content));
-    let newContent = [
-      ...this.state.itemsContent.slice(0, this.state.index),
-      newItem,
-      ...this.state.itemsContent.slice(this.state.index + 1)
-    ];
-    this.store(newContent);
-    this.setState({
-      itemsContent: newContent
-    });
+    let newItem = {title: title, content: content, color: color};
+    this.addItem(newItem);
     this.triggerEditing();
   };
 
+
   render() {
     return (
-      <div>
-        {this.state.adding ? (
-          <div className="popup">
-            <EditorWindow onSubmit={this.addText} />
-          </div>
-        ) : null}
+        <div>
+          {this.state.adding ? (
+              <div className="popup">
+                <EditorWindow onSubmit={this.addText}/>
+              </div>
+          ) : null}
 
-        {this.state.editingOld ? (
-          <div className="popup">
-            <EditorWindow
-              onSubmit={this.updateText}
-              title={this.state.editorTitle}
-              content={this.state.editorContent}
-              color={this.state.editorColor}
-            />
-          </div>
-        ) : null}
-        <button onClick={() => this.setAdding(true)}>Add</button>
-        <button onClick={this.triggerEditing}>Edit</button>
-        <ReactGridLayout
-          layout={this.state.layout}
-          onLayoutChange={this.onLayoutChange}
-          items={this.state.items}
-          isDraggable={this.state.isDraggable}
-          isResizable={this.state.isResizable}
-          cols={this.state.cols}
-          {...this.props}
-        >
-          {this.generateDOM()}
-        </ReactGridLayout>
-      </div>
+          {this.state.editingOld ? (
+              <div className="popup">
+                <EditorWindow
+                    onSubmit={this.updateText}
+                    title={this.state.editorTitle}
+                    content={this.state.editorContent}
+                    color={this.state.editorColor}
+                />
+              </div>
+          ) : null}
+          <button onClick={() => this.setAdding(true)}>Add</button>
+          <button onClick={this.triggerEditing}>Edit</button>
+          <ReactGridLayout
+              layout={this.state.layout}
+              onLayoutChange={this.onLayoutChange}
+              items={this.state.items}
+              isDraggable={this.state.isDraggable}
+              isResizable={this.state.isResizable}
+              cols={this.state.cols}
+              {...this.props}
+          >
+            {this.generateDOM()}
+          </ReactGridLayout>
+        </div>
     );
   }
 }

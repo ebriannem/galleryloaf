@@ -1,5 +1,4 @@
 import React from "react";
-import { ConvertFromRaw, EditorState } from "draft-js";
 import { TextEditor } from "./TextEditor";
 
 export class ReadOnlyEditor extends React.Component {

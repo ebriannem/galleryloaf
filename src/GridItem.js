@@ -1,7 +1,5 @@
 import React from "react";
-import { EditorWindow } from "./editor/EditorWindow";
 import { ReadOnlyEditor } from "./editor/ReadOnlyEditor";
-import { stateToHTML } from "draft-js-export-html";
 
 const gridItemStyle = {
   width: "100%",
@@ -70,7 +68,7 @@ export class GridItem extends React.Component {
         {this.image ? (
           <img style={gridImageStyle} alt={this.title} src={this.image} />
         ) : null}
-        {this.content ? (
+        {this.state.content ? (
           <div style={gridTextStyle}>
             <ReadOnlyEditor ref={this.reader} content={this.state.content} />
           </div>
