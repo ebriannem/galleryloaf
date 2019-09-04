@@ -5,7 +5,7 @@ import GridLayout from "react-grid-layout";
 
 import "./styles.css";
 import {GridItem} from "./GridItem";
-import {BasicLayout} from "./TestGrid";
+import {GalleryGrid} from "./TestGrid";
 
 export function App() {
   var [layout, setLayout] = useState([]);
@@ -18,7 +18,7 @@ export function App() {
 
   return (
       <div className="App">
-        <BasicLayout/>
+        <GalleryGrid/>
       </div>
   );
 }

@@ -1,20 +1,18 @@
 import React from "react";
 import { TextEditor } from "./TextEditor";
-import { Grid, TextField } from "@material-ui/core";
-import { CirclePicker } from "react-color";
-import { stateToHTML } from "draft-js-export-html";
-
-const colorOptions = ["#4a4e69", "#9a8c98", "#c9ada7", "#f2e9e4"];
+import { Grid } from "@material-ui/core";
+import {ReactComponent as SaveIcon} from "../resources/save.svg";
+import {propOrDefault} from "../utils";
 
 export class EditorWindow extends React.Component {
   constructor(props) {
     super(props);
-    this.onSubmit = props.onSubmit;
     this.editor = React.createRef();
+
+    this.onSubmit = props.onSubmit;
     this.state = {
-      title: props.title || "",
-      color: props.color || "#4a4e69",
-      content: props.content
+      title: propOrDefault(props.title, ""),
+      content: propOrDefault(props.content, ""),
     };
   }
 
@@ -22,7 +20,6 @@ export class EditorWindow extends React.Component {
     this.onSubmit(
       this.state.title,
       this.editor.current.getContent(),
-      this.state.color
     );
   };
 
@@ -42,17 +39,8 @@ export class EditorWindow extends React.Component {
           <Grid item>
             <input
               style={{ float: "left", margin: "0" }}
-              label="Title"
               value={this.state.title}
               onChange={this.updateTitle}
-              margin="normal"
-            />
-          </Grid>
-          <Grid item>
-            <CirclePicker
-              color={this.state.color}
-              onChangeComplete={this.handleChangeComplete}
-              colors={colorOptions}
             />
           </Grid>
         </Grid>
@@ -61,11 +49,10 @@ export class EditorWindow extends React.Component {
             this.setState({ content: content });
           }}
           ref={this.editor}
-          backgroundColor={this.state.selectedColor}
           content={this.state.content || null}
         />
         <button className="EditorWindow-SaveButton" onClick={this.handleSubmit}>
-          {this.state.title ? "Save!" : "Exit!"}
+          <SaveIcon/>
         </button>
       </div>
     );

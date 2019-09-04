@@ -1,194 +1,173 @@
 import React from "react";
 import _ from "lodash";
-import RGL, {Responsive, WidthProvider} from "react-grid-layout";
+import RGL, {WidthProvider} from "react-grid-layout";
 import {GridItem} from "./GridItem";
 import {sizeMe} from "react-sizeme";
 import {EditorWindow} from "./editor/EditorWindow";
-import {stateToHTML} from "draft-js-export-html";
 import {convertFromRaw, convertToRaw} from "draft-js"
 import db from "./firebase/firebase";
+import {ReactComponent as CameraIcon} from './resources/camera.svg';
+import {ReactComponent as TextIcon} from './resources/file-text.svg';
+import {ReactComponent as EditIcon} from './resources/edit.svg';
+import {ImageWindow} from "./editor/ImageWindow";
+import {propOrDefault} from "./utils";
+
+
+const uuidv4 = require('uuid/v4');
 
 const ReactGridLayout = WidthProvider(RGL);
 
-String.prototype.hashCode = function() {
-  var hash = 0, i, chr;
-  if (this.length === 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    chr   = this.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-};
-
-export class BasicLayout extends React.Component {
-  static defaultProps = {
-    className: "layout",
-    rowHeight: 50,
-    onLayoutChange: function (l) {
-      localStorage.setItem("layout", JSON.stringify(l));
-    }
-  };
-
+export class GalleryGrid extends React.Component {
   constructor(props) {
     super(props);
-    var layout = this.generateLayout();
     this.state = {
       isDraggable: false,
       isResizable: false,
       items: 0,
-      layout: layout,
+      layout: [],
       itemsContent: [],
       cols: 10,
-      adding: false
+      adding: false,
+      addingImage: false,
     };
-
     this.loadFromDb();
-    console.log("data:" + this.state.itemsContent + "count:" + this.state.items);
-
   }
 
-
-  store = c => {
-    localStorage.setItem("contents", JSON.stringify(c));
-  };
-
-  openEditor = (title, content, color, index) => {
-    console.log("OP");
-    this.setState({
-      editorTitle: title,
-      editorContent: content,
-      editorColor: color,
-      index: index
+  loadFromDb = () => {
+    db.collection("test").get().then((querySnapshot) => {
+      let documents = querySnapshot.docs.map((doc) => {
+        let data = doc.data();
+        return ({
+          id: doc.id,
+          title: data["title"],
+          content: data["content"],
+          image: data["image"]
+        });
+      });
+      let layouts = querySnapshot.docs.map((doc) => {
+            let data = doc.data();
+            return {i: doc.id, ...data["layout"]};
+          }
+      );
+      this.setState({
+        itemsContent: documents,
+        items: documents.length,
+        layout: layouts
+      })
     });
-    this.setEditingOld(true);
   };
+
+  /*
+  Adding
+   */
+
+  addItem = item => {
+    const id = item.id || uuidv4();
+    db.collection("test").doc(id).set({
+      title: propOrDefault(item.title, ""),
+      content: (item.content !== undefined ? convertToRaw(item.content) : ""),
+      image: propOrDefault(item.image, ""),
+      layout: {
+        i: id,
+        ...item.layout
+      }
+    });
+    this.loadFromDb();
+  };
+
+  addText = (title, content) => {
+    if (title) {
+      this.addItem({
+        title: title,
+        content: content,
+        layout: {x: 0, y: 0, w: 5, h: 5}
+      });
+    }
+    this.setAdding(false);
+  };
+  addImage = (src) => {
+    if (src) {
+      this.addItem({
+        image: src,
+        layout: {x: 0, y: 0, w: 5, h: 5}
+      });
+    }
+    this.setAddingImage(false);
+  };
+
+  updateText = (id, title, content) => {
+    this.setEditingOld(false);
+    this.addItem({id: id, tile: title, content: content});
+    this.triggerEditing();
+  };
+
+  /*
+  State Setting
+   */
+
+  triggerEditing = () => this.setState({
+        isResizable: !this.state.isResizable,
+        isDraggable: !this.state.isDraggable
+      });
+  setAdding = toggle => {
+    this.setState({adding: toggle});
+  };
+  setAddingImage = toggle => {
+    this.setState({addingImage: toggle});
+  };
+  setEditingOld = toggle => {
+    this.setState({editingOld: toggle});
+  };
+
+
+  /*
+  Rendering
+   */
+
+  editingWindow = () => (
+      this.state.adding ? (
+              <div className="popup">
+                <EditorWindow onSubmit={this.addText}/>
+              </div>)
+          :
+              this.state.addingImage ? (
+                  <div className="popup">
+                    <ImageWindow
+                        onSubmit={this.addImage}
+                    />
+                  </div>
+              ): null
+  );
 
   generateDOM = () => {
     let stuff = this.state.itemsContent;
-    let opener = this.openEditor;
     return _.map(_.range(this.state.items), function (i) {
       return (
-          <div key={i}>
+          <div key={stuff[i].id}>
             <GridItem
                 title={stuff[i].title}
-                color={stuff[i].color}
-                logKey={opener}
                 content={stuff[i].content ? convertFromRaw(stuff[i].content) : false}
+                image={stuff[i].image ? stuff[i].image : false}
             />
           </div>
       );
     });
   };
 
-  loadFromDb = () => {
-    db.collection("test").get().then((querySnapshot) => {
-      let documents = querySnapshot.docs.map((doc) => {
-            return (doc.data());
-          }
-      );
-      console.log(documents);
-      this.setState({
-        itemsContent: documents,
-        items: documents.length,
-      })
-    })
-  };
-
-  addItem = item => {
-    const key = item.title.hashCode();
-    db.collection("test").doc(item.title).set({
-      title: item.title,
-      content: convertToRaw(item.content),
-      color: item.color,
-      layout: this.randomLayout(key)
-    });
-    this.loadFromDb();
-  };
-
-  triggerEditing = () =>
-      this.setState({
-        isResizable: !this.state.isResizable,
-        isDraggable: !this.state.isDraggable
-      });
-
-  generateLayout = () => {
-    const p = this.props;
-    var layout = _.map(new Array(p.items), function (item, i) {
-      const y = _.result(p, "y") || Math.ceil(Math.random() * 4) + 1;
-      return {
-        x: (i * 2) % 12,
-        y: Math.floor(i / 6) * y,
-        w: 2,
-        h: y,
-        i: i.toString()
-      };
-    });
-    return layout;
-  }
-
-  randomLayout = i => {
-    const y = _.result(this.state, "y") || Math.ceil(Math.random() * 4) + 1;
-    return {
-      x: (i * 2) % 12,
-      y: Math.floor(i / 6) * y,
-      w: 2,
-      h: y,
-      i: i.toString()
-    };
-  };
-
-  addText = (title, content, color) => {
-    if (title) {
-      this.addItem({
-        title: title,
-        content: content,
-        color: color
-      });
-    }
-    this.setAdding(false);
-  };
-
-  setAdding = toggle => {
-    this.setState({adding: toggle});
-  };
-
-  setEditingOld = toggle => {
-    this.setState({editingOld: toggle});
-  };
-
-  updateText = (title, content, color) => {
-    this.setEditingOld(false);
-    let newItem = {title: title, content: content, color: color};
-    this.addItem(newItem);
-    this.triggerEditing();
-  };
-
-
   render() {
     return (
         <div>
-          {this.state.adding ? (
-              <div className="popup">
-                <EditorWindow onSubmit={this.addText}/>
-              </div>
-          ) : null}
-
-          {this.state.editingOld ? (
-              <div className="popup">
-                <EditorWindow
-                    onSubmit={this.updateText}
-                    title={this.state.editorTitle}
-                    content={this.state.editorContent}
-                    color={this.state.editorColor}
-                />
-              </div>
-          ) : null}
-          <button onClick={() => this.setAdding(true)}>Add</button>
-          <button onClick={this.triggerEditing}>Edit</button>
+          {this.editingWindow()}
+          <div className={"edit-bar"}>
+            {this.state.isDraggable ?
+            <div>
+              <button onClick={() => this.setAdding(true)}><TextIcon/></button>
+            <button onClick={() => this.setAddingImage(true)}><CameraIcon/></button></div>
+                : null}
+            <button onClick={this.triggerEditing}><EditIcon/></button>
+          </div>
           <ReactGridLayout
               layout={this.state.layout}
-              onLayoutChange={this.onLayoutChange}
               items={this.state.items}
               isDraggable={this.state.isDraggable}
               isResizable={this.state.isResizable}

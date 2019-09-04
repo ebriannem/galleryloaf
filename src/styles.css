@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css?family=Oxygen+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css?family=Josefin+Sans:300|Raleway&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Montserrat&display=swap");
 
 /* Colors */
 :root {
@@ -23,20 +24,12 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: "Josefin Sans", sans-serif;
+  font-family: "Montserrat", sans-serif;
   text-align: left;
-  margin: 5px;
-  margin-bottom: 0;
+  margin: 5px 5px 0;
+  font-variant: small-caps;
 }
 
-hr.dotted-divider {
-  border: 0;
-  height: 0;
-  border-top: 0px;
-  padding: 0;
-  margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-}
 
 /*
   Grid
@@ -73,7 +66,6 @@ hr.dotted-divider {
   z-index: 1;
   will-change: width, height;
 }
-
 .react-grid-item.react-draggable-dragging {
   transition: none;
   z-index: 3;
@@ -128,6 +120,18 @@ hr.dotted-divider {
   overflow: hidden;
 }
 
+input {
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid white;
+  padding: 10px;
+  color: white;
+  font-size: 2em;
+}
+input[type=text]:focus {
+}
+
+
 #editor-window {
   background: var(--dark);
   width: 80vw;
@@ -137,6 +141,7 @@ hr.dotted-divider {
   padding: 20px;
   z-index: 1000;
 }
+
 
 .RichEditor-content {
   margin-top: 20px;
@@ -226,4 +231,32 @@ hr.dotted-divider {
   border-radius: 50%;
   border-width: 0;
   background-color: var(--accent);
+}
+
+
+.GridItem-EditButton {
+  height: 15%;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: transparent ;
+  color: rgba(0, 0, 0, .4);
+}
+
+
+.ImageItem {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding-left: 0;
+}
+
+.TextItem {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-left: 5px;
+  background-color: black;
 }
