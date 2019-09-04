@@ -1,7 +1,7 @@
 import React from "react";
 import { Editor, EditorState, RichUtils, SelectionState } from "draft-js";
-import { stateToHTML } from "draft-js-export-html";
 import { Grid } from "@material-ui/core";
+import { Modifier } from "draft-js";
 
 export class TextEditor extends React.Component {
   constructor(props) {
@@ -15,9 +15,7 @@ export class TextEditor extends React.Component {
     this.readOnly = props.readOnly;
     this.focus = () => this.refs.editor.focus();
     this.onChange = editorState => this.setState({ editorState });
-
     this.handleKeyCommand = command => this._handleKeyCommand(command);
-    this.onTab = e => this._onTab(e);
     this.toggleBlockType = type => this._toggleBlockType(type);
     this.toggleInlineStyle = style => this._toggleInlineStyle(style);
   }
@@ -40,10 +38,26 @@ export class TextEditor extends React.Component {
     return false;
   }
 
-  _onTab(e) {
-    const maxDepth = 4;
-    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-  }
+  onTab = (e) => {
+    e.preventDefault();
+    let currentState = this.state.editorState;
+
+    const selection = currentState.getSelection();
+    const blockType = currentState
+        .getCurrentContent()
+        .getBlockForKey(selection.getStartKey())
+        .getType();
+
+   let newContentState = Modifier.replaceText(
+          currentState.getCurrentContent(),
+          currentState.getSelection(),
+          '    ');
+
+
+      this.setState({editorState: EditorState.push(currentState, newContentState, 'insert-characters')})
+
+
+  };
 
   _toggleBlockType(blockType) {
     this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));

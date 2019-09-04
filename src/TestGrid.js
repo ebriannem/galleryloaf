@@ -11,6 +11,8 @@ import {ReactComponent as TextIcon} from './resources/file-text.svg';
 import {ReactComponent as EditIcon} from './resources/edit.svg';
 import {ImageWindow} from "./editor/ImageWindow";
 import {propOrDefault} from "./utils";
+import classNames from "classnames";
+import Slide from 'react-reveal/Slide';
 
 
 const uuidv4 = require('uuid/v4');
@@ -30,8 +32,20 @@ export class GalleryGrid extends React.Component {
       adding: false,
       addingImage: false,
     };
-    this.loadFromDb();
+    this.initialLoad();
   }
+
+  onLayoutChange = (l) => {
+    db.collection("test").doc("layout").set({layout: JSON.stringify(l)});
+  };
+
+  initialLoad = () => {
+    this.loadFromDb();
+    let laydoc = db.collection("test").doc("layout");
+    this.setState({
+      layout:  laydoc.get().then((doc) => {console.log(doc.get("layout")); return(JSON.parse(doc.get("layout")))})
+  })
+  };
 
   loadFromDb = () => {
     db.collection("test").get().then((querySnapshot) => {
@@ -44,15 +58,9 @@ export class GalleryGrid extends React.Component {
           image: data["image"]
         });
       });
-      let layouts = querySnapshot.docs.map((doc) => {
-            let data = doc.data();
-            return {i: doc.id, ...data["layout"]};
-          }
-      );
       this.setState({
         itemsContent: documents,
         items: documents.length,
-        layout: layouts
       })
     });
   };
@@ -67,11 +75,17 @@ export class GalleryGrid extends React.Component {
       title: propOrDefault(item.title, ""),
       content: (item.content !== undefined ? convertToRaw(item.content) : ""),
       image: propOrDefault(item.image, ""),
-      layout: {
-        i: id,
-        ...item.layout
-      }
+
     });
+    this.onLayoutChange(
+      [...this.state.layout, {
+          i: id,
+         x: 0,
+        y: 0,
+        w: 2,
+        h: 2,
+        }]
+    );
     this.loadFromDb();
   };
 
@@ -80,7 +94,6 @@ export class GalleryGrid extends React.Component {
       this.addItem({
         title: title,
         content: content,
-        layout: {x: 0, y: 0, w: 5, h: 5}
       });
     }
     this.setAdding(false);
@@ -89,7 +102,6 @@ export class GalleryGrid extends React.Component {
     if (src) {
       this.addItem({
         image: src,
-        layout: {x: 0, y: 0, w: 5, h: 5}
       });
     }
     this.setAddingImage(false);
@@ -159,18 +171,18 @@ export class GalleryGrid extends React.Component {
         <div>
           {this.editingWindow()}
           <div className={"edit-bar"}>
-            {this.state.isDraggable ?
-            <div>
-              <button onClick={() => this.setAdding(true)}><TextIcon/></button>
-            <button onClick={() => this.setAddingImage(true)}><CameraIcon/></button></div>
-                : null}
-            <button onClick={this.triggerEditing}><EditIcon/></button>
+
+            <Slide top collapse when={this.state.isDraggable}>
+              <button onClick={() => this.setAdding(true)}><TextIcon className={"toggleable"}/></button>
+            <button onClick={() => this.setAddingImage(true)}><CameraIcon className={"toggleable"}/></button></Slide>
+            <button onClick={this.triggerEditing}><EditIcon className={classNames("toggleable", this.state.isDraggable ? "toggled" : "untoggled")}/></button>
           </div>
           <ReactGridLayout
               layout={this.state.layout}
               items={this.state.items}
               isDraggable={this.state.isDraggable}
               isResizable={this.state.isResizable}
+              onLayoutChange={this.onLayoutChange}
               cols={this.state.cols}
               {...this.props}
           >

@@ -4,13 +4,10 @@
 
 /* Colors */
 :root {
-  --dark: #1e1b18;
-  --light: #f2e9e4;
-  --darkerLight: #bac0c1;
-  --accent: #f4bb75;
-  --op1: #4a4e69;
-  --op2: #9a8c98;
-  --op3: #c9ada7;
+  --dark: #30323D;
+  --light: #EEF1EF;
+  --darkerLight: #A9B4C2;
+  --accent: #7C0055;
   background-color: var(--light);
 }
 
@@ -18,6 +15,7 @@
   font-family: "Raleway", sans-serif;
   text-align: center;
   color: var(--light);
+  margin-left: 20px;
 }
 
 h1,
@@ -125,7 +123,7 @@ input {
   background: transparent;
   border-bottom: 2px solid white;
   padding: 10px;
-  color: white;
+  color: var(--light);
   font-size: 2em;
 }
 input[type=text]:focus {
@@ -161,7 +159,7 @@ input[type=text]:focus {
 }
 
 .RichEditor-root {
-  background: #fff;
+  background: var(--light);
   font-family: "Raleway", serif;
   font-size: 14px;
 }
@@ -187,7 +185,7 @@ input[type=text]:focus {
 }
 
 .RichEditor-editor .RichEditor-blockquote {
-  border-left: 5px solid #eee;
+  border-left: 5px solid var(--light);
   color: var(--darkerLight);
   font-family: "Hoefler Text", "Georgia", serif;
   font-style: italic;
@@ -243,6 +241,20 @@ input[type=text]:focus {
   color: rgba(0, 0, 0, .4);
 }
 
+button {
+  background-color: transparent;
+  border: none;
+}
+.toggleable {
+  transition: color 300ms;
+}
+.toggleable:hover {
+  color: var(--accent)
+}
+.toggled {
+  color: var(--accent)
+}
+
 
 .ImageItem {
   width: 100%;
@@ -258,5 +270,12 @@ input[type=text]:focus {
   overflow-x: hidden;
   overflow-y: auto;
   padding-left: 5px;
-  background-color: black;
+  background-color: var(--dark);
+}
+
+.edit-bar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 20px;
 }
