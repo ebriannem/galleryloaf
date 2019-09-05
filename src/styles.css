@@ -1,13 +1,12 @@
 @import url("https://fonts.googleapis.com/css?family=Oxygen+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css?family=Josefin+Sans:300|Raleway&display=swap");
 @import url("https://fonts.googleapis.com/css?family=Montserrat&display=swap");
-
 /* Colors */
 :root {
-  --dark: #30323D;
-  --light: #EEF1EF;
-  --darkerLight: #A9B4C2;
-  --accent: #7C0055;
+  --dark: #30323d;
+  --light: #eef1ef;
+  --darkerLight: #a9b4c2;
+  --accent: #7c0055;
   background-color: var(--light);
 }
 
@@ -27,7 +26,6 @@ h4 {
   margin: 5px 5px 0;
   font-variant: small-caps;
 }
-
 
 /*
   Grid
@@ -71,7 +69,7 @@ h4 {
 }
 
 .react-grid-item.react-grid-placeholder {
-  background: red;
+  background: var(--accent);
   opacity: 0.2;
   transition-duration: 100ms;
   z-index: 2;
@@ -121,17 +119,21 @@ h4 {
 input {
   border: none;
   background: transparent;
-  border-bottom: 2px solid white;
+  border-bottom: 2px solid var(--darkerLight);
   padding: 10px;
-  color: var(--light);
+  color: var(--dark);
   font-size: 2em;
 }
-input[type=text]:focus {
+input::placeholder {
+  color: var(--darkerLight);
+}
+:focus {
+  outline: none;
 }
 
-
 #editor-window {
-  background: var(--dark);
+  background: var(--light);
+  color: var(--dark);
   width: 80vw;
   height: 80vh;
   overflow-x: hidden;
@@ -140,13 +142,14 @@ input[type=text]:focus {
   z-index: 1000;
 }
 
-
 .RichEditor-content {
   margin-top: 20px;
   height: 50vh;
   overflow-y: scroll;
   overflow-x: hidden;
   text-align: left;
+  border-top: solid 1px var(--darkerLight);
+  padding: 5px;
 }
 
 .Readble-content {
@@ -185,8 +188,7 @@ input[type=text]:focus {
 }
 
 .RichEditor-editor .RichEditor-blockquote {
-  border-left: 5px solid var(--light);
-  color: var(--darkerLight);
+  border-left: 5px solid var(--darkerLight);
   font-family: "Hoefler Text", "Georgia", serif;
   font-style: italic;
   margin: 16px 0;
@@ -201,7 +203,7 @@ input[type=text]:focus {
 }
 
 .RichEditor-controls {
-  font-family: "Helvetica", sans-serif;
+  font-family: "Raleway", sans-serif;
   font-size: 14px;
   margin-bottom: 5px;
   user-select: none;
@@ -221,24 +223,20 @@ input[type=text]:focus {
 
 /* EditorWindow */
 .EditorWindow-SaveButton {
-  position: absolute;
-  bottom: 5vh;
-  right: 8vw;
+  position: fixed;
+  bottom: 8vh;
+  right: 10vw;
   width: 50px;
   height: 50px;
-  border-radius: 50%;
-  border-width: 0;
-  background-color: var(--accent);
 }
-
 
 .GridItem-EditButton {
   height: 15%;
   position: absolute;
   top: 0;
   right: 0;
-  background-color: transparent ;
-  color: rgba(0, 0, 0, .4);
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.4);
 }
 
 button {
@@ -249,12 +247,11 @@ button {
   transition: color 300ms;
 }
 .toggleable:hover {
-  color: var(--accent)
+  color: var(--accent);
 }
 .toggled {
-  color: var(--accent)
+  color: var(--accent);
 }
-
 
 .ImageItem {
   width: 100%;
@@ -278,4 +275,17 @@ button {
   left: 0;
   top: 0;
   width: 20px;
+}
+
+#image-window {
+  background: var(--light);
+  color: var(--dark);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.Gallery-Title {
+  color: var(--dark);
 }

@@ -1,7 +1,14 @@
-import React from "react";
-import * as firebase from 'firebase'
+import * as firebase from "firebase";
 
-const config = {};
+const config = {
+  apiKey: "fdsfsdfdsf",
+  authDomain: "fdsfdsfsdfdsf",
+  databaseURL: "sdfdsfdsf",
+  projectId: "dsfdsfdsf",
+  storageBucket: "dsfdsfdsf",
+  messagingSenderId: "dsfdsfsdfdsf"
+};
 firebase.initializeApp(config);
+
 var db = firebase.firestore();
 export default db;

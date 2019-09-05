@@ -1,28 +1,36 @@
-import React, {useState} from "react";
+import React from "react";
 import ReactDOM from "react-dom";
-import GridLayout from "react-grid-layout";
-
 
 import "./styles.css";
-import {GridItem} from "./GridItem";
-import {GalleryGrid} from "./TestGrid";
+import { GalleryGrid } from "./grid/GalleryGrid";
 
-export function App() {
-  var [layout, setLayout] = useState([]);
+export class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sections: [<GalleryGrid />],
+      editing: false
+    };
+  }
 
-  var [items, setItems] = useState([]);
-
-  var addToLayout = () => {
-    var newItem = {title: "Title", text: <p>Hi</p>};
+  addSection = () => {
+    this.setState({
+      sections: [<GalleryGrid />, ...this.state.sections]
+    });
   };
 
-  return (
-      <div className="App">
-        <GalleryGrid/>
-      </div>
-  );
+  setEditing = b => {
+    this.setState({ editing: b });
+  };
+
+  getEditing = () => {
+    return this.state.editing;
+  };
+
+  render() {
+    return <div className="App">{this.state.sections}</div>;
+  }
 }
 
 const rootElement = document.getElementById("root");
-ReactDOM.render(
-  <App/>, rootElement);
+ReactDOM.render(<App />, rootElement);
