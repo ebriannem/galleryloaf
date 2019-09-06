@@ -7,6 +7,7 @@
   "homepage": "http://ebriannem.github.io",
   "dependencies": {
     "@material-ui/core": "4.4.0",
+    "array-move": "^2.1.0",
     "classnames": "latest",
     "draft-js": "0.11.0",
     "draft-js-export-html": "1.4.1",
@@ -19,6 +20,8 @@
     "react-reveal": "^1.2.2",
     "react-scripts": "3.0.1",
     "react-sizeme": "2.6.7",
+    "react-sortable-hoc": "^1.10.1",
+    "react-virtualized": "^9.21.1",
     "uuid": "^3.3.3"
   },
   "devDependencies": {

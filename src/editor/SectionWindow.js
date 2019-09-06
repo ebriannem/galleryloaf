@@ -23,6 +23,7 @@ export class SectionWindow extends React.Component {
   };
   render() {
     return (
+        <div className="popup">
         <div id="section-window">
           <Grid container justify="space-between">
             <Grid item>
@@ -38,6 +39,7 @@ export class SectionWindow extends React.Component {
               </button>
             </Grid>
           </Grid>
+        </div>
         </div>
     );
   }

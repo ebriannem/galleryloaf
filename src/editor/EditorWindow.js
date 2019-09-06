@@ -47,8 +47,8 @@ export class EditorWindow extends React.Component {
           }}
           content={this.state.content || null}
         />
-        <button className="EditorWindow-SaveButton" onClick={this.handleSubmit}>
-          <SaveIcon />
+        <button className="EditorWindow-SaveButton Clickable" onClick={this.handleSubmit}>
+          <SaveIcon/>
         </button>
       </div>
     );

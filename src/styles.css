@@ -271,12 +271,21 @@ button {
 }
 
 .edit-bar {
-  position: fixed;
-  left: 0;
   top: 0;
   width: 20px;
 }
+.edit-bar {
+  position: fixed;
+  top: 0;
+  width: 20px;
+}
+.gallery-content {
+  margin-left: 30px
+}
 
+button {
+  cursor: pointer;
+}
 #image-window {
   background: var(--light);
   color: var(--dark);
@@ -288,4 +297,81 @@ button {
 
 .Gallery-Title {
   color: var(--dark);
+}
+
+
+.Clickable {
+  transition: color 400ms;
+}
+.Clickable:hover {
+  cursor: pointer;
+  color: var(--accent)
+}
+
+.section-bar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  padding: 0;
+}
+
+.gallery-section {
+  transition: margin 300ms linear;
+}
+
+.gallery-section.shifted {
+  margin-left: 100px;
+}
+.gallery-section.unshifted {
+  margin-left: 30px;
+}
+
+.section-button {
+  position: static;
+  width: 100px;
+  margin: 0;
+  height: 2em;
+  padding: 5px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  border-bottom: 1px solid var(--darkerLight);
+}
+
+
+.SortableList {
+  position: static;
+  display: block;
+  width: 100%;
+  background-color: #F3F3F3;
+  border-radius: 3px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #E0E0E0;
+  padding: 0;
+}
+
+.section-button.shrunk {
+  height: 30px;
+  width: 100%;
+}
+
+.section-button.expanded {
+  height: auto;
+}
+.section-bar, .section-button {
+  transition: width 300ms, height 300ms;
+}
+.section-bar.expanded {
+  width: 100px;
+}
+.section-bar.shrunk {
+  width: 50px;
+  white-space:nowrap;
+}
+
+.section-toggle {
+  width: 50px;
+  position: static;
+  display: block;
 }

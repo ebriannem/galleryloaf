@@ -24,14 +24,23 @@ export class GridItem extends React.Component {
     this.image = props.image;
     this.reader = React.createRef();
     this.index = props.index;
+    this.updateFunc = props.updateFunc;
     this.state = {
-      content: props.content
+      content: props.content,
+      title: props.title
     };
+    this.updaterr = this.updaterr.bind(this)
   }
+
+  updaterr() {
+    this.updateFunc({id: this.id, title: this.title, content: this.state.content})
+  }
+
 
   render() {
     return (
       <div className={this.image ? "ImageItem" : "TextItem"}>
+        <button onClick={this.updaterr}>EDIT</button>
         {elementOrNull(
           this.title,
           <div>
