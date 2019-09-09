@@ -4,15 +4,20 @@ import RGL, {WidthProvider} from "react-grid-layout";
 import {GridItem} from "./GridItem";
 import {EditorWindow} from "../editor/EditorWindow";
 import {convertFromRaw, convertToRaw} from "draft-js";
-import db from "../firebase/firebase";
 import {ReactComponent as CameraIcon} from "../resources/camera.svg";
 import {ReactComponent as TextIcon} from "../resources/file-text.svg";
+import {ReactComponent as TypeIcon} from "../resources/type.svg";
+
 import {ReactComponent as EditIcon} from "../resources/edit.svg";
 import {ImageWindow} from "../editor/ImageWindow";
 import {propOrDefault} from "../utils";
 import classNames from "classnames";
 import Slide from "react-reveal/Slide";
-import {items, layout} from "../data";
+import Flip from "react-reveal/Flip";
+
+import {layout} from "../data";
+import {deleteDocument, getDocumentAll, getSection, setDocument, setSection} from "../firebase/Database";
+import {SectionWindow} from "../editor/SectionWindow";
 
 const uuidv4 = require("uuid/v4");
 
@@ -21,14 +26,15 @@ const ReactGridLayout = WidthProvider(RGL);
 export class GalleryGrid extends React.Component {
   constructor(props) {
     super(props);
-
-    this.id = propOrDefault(props.id, uuidv4());
+    this.firstChange = true;
+    this.user = props.user;
     this.state = {
-
-      title: propOrDefault(props.title, "New Section"),
+      editingTitle: false,
+      id: props.id,
+      loaded: false,
+      title: props.title,
       isEditing: false,
-      layout: [],
-      itemsContent: [],
+      loadingNew: false,
       cols: 50,
       addingText: false,
       addingImage: false,
@@ -38,124 +44,128 @@ export class GalleryGrid extends React.Component {
   }
 
   newId = (id) => {
-    this.id = id;
-    this.loadFromDb();
-    let secdoc = db.collection("sectiondata").doc(id);
-    if (secdoc !== undefined) {
-      console.log("loading new section..");
-      secdoc.get().then(doc => {
-        console.log(doc);
-        let title = doc.get("title");
-        this.setState({title: title});
-        let layout = doc.get("layout");
-        if (layout !== undefined) {
-          console.log("loaded..");
-          console.log(layout)
-
-          this.setState({
-            layout: JSON.parse(layout)
+    this.setState({
+      loadingNew: false
+    });
+    this.firstChange = true;
+    this.loadFromDbId(id);
+    getSection(this.user, id).then((section) => {
+      this.setState(
+          {
+            id: id,
+            title: section.get("title"),
+            layout: JSON.parse(section.get("layout")),
+            loadingNew: true
           });
-        }
-      });
-
-    }
-    this.loadFromDbId(id)
-  }
-
-  onLayoutChange = l => {
-    console.log(this.id)
-    if (l.length > 0) {
-      db.collection("sectiondata")
-          .doc(this.id)
-          .set({title: this.state.title, layout: JSON.stringify(l)});
-      this.setState({
-        layout: l
-      })
-    }
+    });
   };
 
+  onLayoutChange = l => {
+    if (!this.firstChange) {
+      this.setState({
+        layout: l
+      });
+      setSection(this.user, this.state.id, {title: this.state.title, layout: JSON.stringify(l)});
+    }
+    this.firstChange = false
+  };
+
+  componentWillUnmount() {
+    this.logData("componentWillUnmount");
+    console.log("Setting layout...")
+    setSection(this.user, this.state.id, {title: this.state.title, layout: JSON.stringify(this.state.layout)});
+  }
+
   componentDidMount() {
+    this.logData("componentDidMount");
     console.log("Mounted");
     this.initialLoad()
+    this.setState({
+      loadingNew: true
+    })
   };
 
   initialLoad = () => {
-    this.loadFromDb();
-    let laydoc = db.collection("sectiondata").doc(this.id);
-    if (laydoc !== undefined) {
-      console.log("loading layout..");
-      laydoc.get().then(doc => {
-        console.log(doc);
-        let layout = doc.get("layout");
-        if (layout !== undefined) {
-          console.log("loaded..");
-          console.log(layout)
-          this.setState({
-            layout: JSON.parse(layout)
-          });
-        }
+    this.logData("initialLoad");
+    getSection(this.user, this.state.id).then((sectionData) => {
+      this.setState({
+        title: sectionData.get("title"),
       });
+      if (sectionData.get("layout") !== undefined) {
+        this.setState({
+          layout: JSON.parse(sectionData.get("layout"))
+        })
+      }
+    });
+    getDocumentAll(this.user, this.state.id).then((documents) => {
+      let docs = documents.docs.map(doc => {
+        return {title: doc.data().title, content: doc.data().content, image: doc.data().image, id: doc.id}
+      });
+      this.setState({
+        itemsContent: docs,
+        items: docs.length
+      })
 
-    }
-  };
+    });
+  }
+
 
   loadFromDbId = (id) => {
-    db.collection(id)
-        .get()
-        .then(querySnapshot => {
-          let documents = querySnapshot.docs.map(doc => {
-            let data = doc.data();
-            return {
-              id: doc.id,
-              title: data["title"],
-              content: data["content"],
-              image: data["image"]
-            };
-          });
-          this.setState({
-            itemsContent: documents,
-            items: documents.length
-          });
-        });
+    this.logData("loadFromDbId");
+    getDocumentAll(this.user, id).then((documents) => {
+      let docs = documents.docs.map(doc => {
+        return {title: doc.data().title, content: doc.data().content, image: doc.data().image, id: doc.id}
+      });
+      if (docs === undefined) {
+        docs = []
+      }
+      this.setState({
+        itemsContent: docs,
+        items: docs.length
+      })
+    })
   };
 
 
   loadFromDb = () => {
-    this.loadFromDbId(this.id)
+    this.logData("loadFromDb");
+    this.loadFromDbId(this.state.id)
   };
 
-  /*
-  Adding
-   */
-
   updateContent = item => {
+    this.logData("updateContent");
     this.state.current = item;
     this.setEditingOld(true);
-  }
+  };
 
   addItem = item => {
+    this.logData("addItem");
+    console.log("Adding item")
     const id = item.id || uuidv4();
-    db.collection(this.id)
-        .doc(id)
-        .set({
-          title: propOrDefault(item.title, ""),
-          content: item.content !== undefined ? convertToRaw(item.content) : "",
-          image: propOrDefault(item.image, "")
-        });
-    this.onLayoutChange([
-      ...this.state.layout,
-      {
-        i: id,
-        x: 0,
-        y: 0,
-        w: 10,
-        h: 10,
-      }
-    ]);
+    setDocument(this.user, this.state.id, id, {
+      title: propOrDefault(item.title, ""),
+      content: item.content !== undefined ? convertToRaw(item.content) : "",
+      image: propOrDefault(item.image, "")
+    });
+    this.setState({
+      layout: [
+        ...this.state.layout,
+        {
+          i: id,
+          x: 10,
+          y: 10,
+          w: 50,
+          h: 50,
+          minW: 10,
+          maxW: 10
+        }
+      ]
+    })
     this.loadFromDb();
   };
 
   addText = (title, content) => {
+    this.logData("addText");
     if (title) {
       this.addItem({
         title: title,
@@ -165,6 +175,7 @@ export class GalleryGrid extends React.Component {
     this.setAdding(false);
   };
   addImage = src => {
+    this.logData("addImage");
     if (src) {
       this.addItem({
         image: src
@@ -173,19 +184,30 @@ export class GalleryGrid extends React.Component {
     this.setAddingImage(false);
   };
 
-  updateText = (id, title, content) => {
-    this.setEditingOld(false);
-    console.log(id);
-    console.log(title);
-    db.collection(this.id)
-        .doc(id)
-        .set({
-          title: title,
-          content: convertToRaw(content),
-        });
+  deleteItem = (id) => {
+    this.logData("deleteItem");
+    deleteDocument(this.user, this.state.id, id);
     this.loadFromDb();
   };
 
+  updateText = (id, title, content) => {
+    this.logData("updateText");
+    this.setEditingOld(false);
+    setDocument(this.user, this.state.id, id, {
+      title: title,
+      content: convertToRaw(content),
+    });
+    this.loadFromDb();
+  };
+
+  updateTitle = (title) => {
+    this.setState({title: title, editingTitle: false});
+    setSection(this.user, this.state.id, {
+      title: title,
+    });
+  };
+
+  /*
   /*
   State Setting
    */
@@ -203,6 +225,10 @@ export class GalleryGrid extends React.Component {
   setEditingOld = toggle => {
     this.setState({editingOld: toggle});
   };
+  setEditingTitle = toggle => {
+    this.setState({editingTitle: toggle});
+  };
+
 
   /*
   Rendering
@@ -220,17 +246,32 @@ export class GalleryGrid extends React.Component {
       ) : this.state.editingOld ? (
           <div className="popup">
             <EditorWindow title={this.state.current.title} content={this.state.current.content}
-                         onSubmit={(title, content) => this.updateText(this.state.current.id, title, content)}/>
+                          onSubmit={(title, content) => this.updateText(this.state.current.id, title, content)}/>
+          </div>
+      ) : this.state.editingTitle ? (
+          <div className="popup">
+            <SectionWindow title={this.state.title}
+                           onSubmit={this.updateTitle}/>
           </div>
       ) : null;
 
+  logData = (name) => {
+    console.log(name)
+    console.log(this.state.layout)
+    console.log(this.state.itemsContent)
+  }
   generateDOM = () => {
+    this.logData("generateDOM");
     let stuff = this.state.itemsContent;
     let updateContent = this.updateContent;
-    return _.map(_.range(this.state.itemsContent.length), function (i) {
+    let editFunc = () => this.state.isEditing;
+    let deleteFunc = this.deleteItem;
+    let contents = _.map(_.range(this.state.itemsContent.length), function (i) {
       return (
           <div key={stuff[i].id}>
             <GridItem
+                delete={deleteFunc}
+                editing={editFunc}
                 id={stuff[i].id}
                 title={stuff[i].title}
                 content={
@@ -242,11 +283,13 @@ export class GalleryGrid extends React.Component {
           </div>
       );
     });
+    console.log(contents);
+    return contents;
   };
 
   render() {
     return (
-        <div className={"Gallery-Grid"}>
+        <div className={"Gallery-Grid"} style={{overflowX: "hidden"}}>
           {this.editingWindow()}
           <div className={"edit-bar"}>
             <Slide top collapse when={this.state.isEditing}>
@@ -255,6 +298,9 @@ export class GalleryGrid extends React.Component {
               </button>
               <button onClick={() => this.setAddingImage(true)}>
                 <CameraIcon className={"Clickable"}/>
+              </button>
+              <button onClick={() => this.setEditingTitle(true)}>
+                <TypeIcon className={"Clickable"}/>
               </button>
             </Slide>
             <button onClick={this.triggerEditing}>
@@ -266,24 +312,26 @@ export class GalleryGrid extends React.Component {
               />
             </button>
           </div>
-          <div className={"gallery-content"}>
-          <h1 className={"Gallery-Title"}>
-            <span>{this.state.title}</span>
-          </h1>
-          <ReactGridLayout
-              layout={this.state.layout}
-              items={this.state.itemsContent.length}
-              isDraggable={this.state.isEditing}
-              isResizable={this.state.isEditing}
-              onLayoutChange={this.onLayoutChange}
-              margin={[10, 4]}
-              cols={this.state.cols}
-              rowHeight={5}
-              {...this.props}
-          >
-            {this.generateDOM()}
-          </ReactGridLayout>
-          </div>
+            <div className={"gallery-content"}>
+
+              <h1 className={"Gallery-Title Line"}>
+                <span>{this.state.title}</span>
+              </h1>
+              {this.state.itemsContent !== undefined ?
+                  <ReactGridLayout
+                      layout={this.state.layout}
+                      items={this.state.items}
+                      isDraggable={this.state.isEditing}
+                      isResizable={this.state.isEditing}
+                      onLayoutChange={this.onLayoutChange}
+                      margin={[10, 4]}
+                      cols={this.state.cols}
+                      rowHeight={5}
+                  >
+                    {this.generateDOM()}
+                  </ReactGridLayout>
+                  : null}
+            </div>
         </div>
     );
   }

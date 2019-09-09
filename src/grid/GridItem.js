@@ -1,6 +1,9 @@
 import React from "react";
 import { ReadOnlyEditor } from "../editor/ReadOnlyEditor";
 import { elementOrNull } from "../utils";
+import classNames from "classnames";
+import {ReactComponent as EditIcon} from "../resources/edit.svg";
+import {ReactComponent as DeleteIcon} from "../resources/trash-2.svg";
 
 const gridImageStyle = {
   width: "100%",
@@ -29,7 +32,9 @@ export class GridItem extends React.Component {
       content: props.content,
       title: props.title
     };
-    this.updaterr = this.updaterr.bind(this)
+    this.updaterr = this.updaterr.bind(this);
+    this.editing = props.editing;
+    this.deleteSelf = () => props.delete(props.id);
   }
 
   updaterr() {
@@ -39,8 +44,11 @@ export class GridItem extends React.Component {
 
   render() {
     return (
-      <div className={this.image ? "ImageItem" : "TextItem"}>
-        <button onClick={this.updaterr}>EDIT</button>
+      <div className={classNames("grid-item", this.image ? "ImageItem" : "TextItem")}>
+        {this.title !== "" ?
+        <div><button className={classNames("item-edit-button", this.editing() ? "visible" : "hidden", "Clickable")} onClick={this.updaterr}><EditIcon/></button>
+          <button className={classNames("item-edit-button", this.editing() ? "visible" : "hidden", "Clickable")} onClick={this.deleteSelf}><DeleteIcon/></button></div>
+            : null}
         {elementOrNull(
           this.title,
           <div>

@@ -3,14 +3,18 @@ import ReactDOM from "react-dom";
 import classNames from "classnames";
 import "./styles.css";
 import {GalleryGrid} from "./grid/GalleryGrid";
-import db from "./firebase/firebase";
 import {ReactComponent as AddIcon} from "./resources/add.svg";
 import {ReactComponent as ExpandIcon} from "./resources/expand.svg";
+import {ReactComponent as UserIcon} from "./resources/user.svg";
+
 import {ReactComponent as ShrinkIcon} from "./resources/shrink.svg";
+import {ReactComponent as DeleteIcon} from "./resources/trash-2.svg";
+
 import {Grid} from "@material-ui/core"
 import {SectionWindow} from "./editor/SectionWindow";
 import {sortableContainer, sortableElement, sortableHandle} from 'react-sortable-hoc';
 import arrayMove from 'array-move';
+import {getSectionAll, setSection} from "./firebase/Database";
 
 const uuidv4 = require("uuid/v4");
 
@@ -23,23 +27,25 @@ const SortableContainer = sortableContainer(({children}) => {
 
 
 export class App extends React.Component {
+
   constructor(props) {
     super(props);
-    let ids = ["0"];
     this.state = {
-      sections: ids,
-      selected: ids[0],
+      user: "0",
       addingSection: false,
-      expandingSection: false
+      expandingSection: false,
     };
     this.grid = React.createRef();
-    this.loadFromDB();
   }
 
-  SortableItem = sortableElement(({value}) => (
+  componentDidMount() {
+    this.loadFromDB()
+  }
+
+  SortableItem = sortableElement(({value, id}) => (
       <Grid item>
-        <button onClick={() => this.setSelected(value)}
-                className={classNames("section-button", "toggleable", this.state.selected === value ? "toggled" : "untoggled", this.state.expandingSection ? "expanded" : "shrunk")}>
+        <button onClick={() => this.setSelected(id)}
+                className={classNames("section-button", "toggleable", this.state.selected === id ? "toggled" : "untoggled", this.state.expandingSection ? "expanded" : "shrunk")}>
           <DragHandle/>
           {value}
         </button>
@@ -47,37 +53,35 @@ export class App extends React.Component {
   ));
 
   loadFromDB = () => {
-    let sectionNames = db.collection("sectiondata").doc("metadata");
-    if (sectionNames !== undefined) {
-      sectionNames.get().then(data => {
-        let names = data.get("names");
-        if (names !== undefined) {
-          this.setState({
-            sections: names,
-            selected: names[0],
-            addingSection: false
-          });
-          console.log(names.length)
-        }
+    let setter = this;
+    getSectionAll(this.state.user).then(function(querySnapshot) {
+      let data = [];
+      let names = []
+      querySnapshot.forEach(function(doc) {
+        // doc.data() is never undefined for query doc snapshots
+        data = [...data, doc.id];
+        console.log(data)
+        names = [...names, doc.get("title")];
+        console.log(data)
       });
-    }
+      if(data.length > 0) {
+        setter.setState({
+          sections: data,
+          names: names,
+          selected: data[0],
+          addingSection: false
+        });
+      }
+    });
   };
-
   addSection = (title) => {
+    console.log("ADDING" + title);
     if (title !== "") {
       let newId = uuidv4();
-      let newSections = [newId, ...this.state.sections];
-      this.setState({
-        sections: newSections,
-        selected: newId
-      });
-      let sectionDoc = db.collection("sectiondata").doc(newId);
-      sectionDoc.set({title: title});
-      this.grid.current.newId(newId);
-      let sectionNames = db.collection("sectiondata").doc("metadata");
-      sectionNames.set({names: newSections});
+      setSection(this.state.user, newId, {title: title, layout: JSON.stringify([])});
+      console.log("ADDED");
     }
-    this.toggleAddingSection(false);
+    this.loadFromDB();
   };
 
   onSortEnd = ({oldIndex, newIndex}) => {
@@ -85,7 +89,6 @@ export class App extends React.Component {
       sections: arrayMove(this.state.sections, oldIndex, newIndex),
     });
   };
-
 
   openSectionPopup = () => {
     this.toggleAddingSection(true)
@@ -114,6 +117,9 @@ export class App extends React.Component {
       {this.state.addingSection ? <SectionWindow onSubmit={this.addSection}/> : null}
       <div className={classNames("section-bar", this.state.expandingSection ? "expanded" : "shrunk")}>
         <button className={"Clickable section-toggle"}  onClick={this.openSectionPopup}>
+          <UserIcon/>
+        </button>
+        <button className={"Clickable section-toggle"}  onClick={this.openSectionPopup}>
           <AddIcon/>
         </button>
         <button className={"Clickable section-toggle"}  onClick={this.toggleExpandingSection}>
@@ -121,15 +127,23 @@ export class App extends React.Component {
               <ShrinkIcon/> :
               <ExpandIcon/>}
         </button>
+        {/*<button className={"Clickable section-toggle"}  onClick={this.deleteSection}>*/}
+          {/*<DeleteIcon/>*/}
+        {/*</button>*/}
+        {this.state.selected !== undefined ?
+
         <SortableContainer onSortEnd={this.onSortEnd} useDragHandle>
-          {this.state.sections.map((value, index) => (
-              <this.SortableItem key={`item-${value}`} index={index} value={value}/>
+          {this.state.names.map((value, index) => (
+              <this.SortableItem key={`item-${this.state.sections[index]}`} index={index} value={value} id={this.state.sections[index]}/>
           ))}
         </SortableContainer>
+            : null}
       </div>
+      {this.state.selected !== undefined ?
       <div className={classNames("gallery-section", this.state.expandingSection ? "shifted" : "unshifted")}>
-        {<GalleryGrid ref={this.grid} id={this.state.selected}/>}
+        {<GalleryGrid ref={this.grid} user={this.state.user} id={this.state.selected}/>}
       </div>
+          : null }
     </div>;
   }
 }

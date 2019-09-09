@@ -1,19 +1,33 @@
 @import url("https://fonts.googleapis.com/css?family=Oxygen+Mono&display=swap");
-@import url("https://fonts.googleapis.com/css?family=Josefin+Sans:300|Raleway&display=swap");
-@import url("https://fonts.googleapis.com/css?family=Montserrat&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Raleway:300&display=swap");
+@import url('https://fonts.googleapis.com/css?family=Montserrat:300&display=swap');
 /* Colors */
 :root {
   --dark: #30323d;
   --light: #eef1ef;
   --darkerLight: #a9b4c2;
   --accent: #7c0055;
-  background-color: var(--light);
+  --darkAccent:  #F7C138;
+  background-color: var(--dark);
 }
 
+h1, h2, .Gallery-Title {
+  font-family: Montserrat, serif;
+  font-variant: small-caps;
+}
+
+html, body{
+  overflow-x: hidden;
+}
+
+
 .App {
-  font-family: "Raleway", sans-serif;
+  height: 100%;
+  width: 100%;
+  padding: 1px;
+  font-family: Raleway, sans-serif;
   text-align: center;
-  color: var(--light);
+  color: var(--dark);
   margin-left: 20px;
 }
 
@@ -25,6 +39,26 @@ h4 {
   text-align: left;
   margin: 5px 5px 0;
   font-variant: small-caps;
+}
+
+/*
+Misc
+ */
+.Line span {
+  display: inline-block;
+  position: relative;
+}
+.Line span:after {
+  content: "...";
+  position: absolute;
+  height: 5px;
+  border-bottom: 1px solid var(--darkAccent);
+  top: .5em;
+  width: 20vw;
+}
+.Line span:after {
+  left: 100%;
+  margin-left: 15px;
 }
 
 /*
@@ -76,11 +110,14 @@ h4 {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  -o-user-select: none;
   user-select: none;
 }
 
-.react-grid-item > .react-resizable-handle {
+.grid-item {
+  background-color: var(--light);
+}
+
+.react-resizable-handle {
   position: absolute;
   width: 20px;
   height: 20px;
@@ -122,7 +159,7 @@ input {
   border-bottom: 2px solid var(--darkerLight);
   padding: 10px;
   color: var(--dark);
-  font-size: 2em;
+  font-size: 1em;
 }
 input::placeholder {
   color: var(--darkerLight);
@@ -223,9 +260,8 @@ input::placeholder {
 
 /* EditorWindow */
 .EditorWindow-SaveButton {
-  position: fixed;
-  bottom: 8vh;
-  right: 10vw;
+  position: relative;
+  float: right;
   width: 50px;
   height: 50px;
 }
@@ -245,11 +281,18 @@ button {
 }
 .toggleable {
   transition: color 300ms;
+  color: var(--darkerLight);
+
 }
 .toggleable:hover {
-  color: var(--accent);
+  color: var(--darkAccent);
 }
 .toggled {
+  color: var(--darkAccent);
+}
+
+
+.Clickable.item-edit-button:hover {
   color: var(--accent);
 }
 
@@ -267,7 +310,6 @@ button {
   overflow-x: hidden;
   overflow-y: auto;
   padding-left: 5px;
-  background-color: var(--dark);
 }
 
 .edit-bar {
@@ -280,7 +322,8 @@ button {
   width: 20px;
 }
 .gallery-content {
-  margin-left: 30px
+  margin-left: 30px;
+  width: 100%;
 }
 
 button {
@@ -296,16 +339,26 @@ button {
 }
 
 .Gallery-Title {
-  color: var(--dark);
+  color: var(--light);
 }
 
 
 .Clickable {
   transition: color 400ms;
+  color: var(--darkerLight)
 }
 .Clickable:hover {
   cursor: pointer;
-  color: var(--accent)
+  color: var(--darkAccent)
+}
+
+#section-window {
+  background: var(--light);
+  color: var(--dark);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding: 20px;
+  z-index: 1000;
 }
 
 .section-bar {
@@ -318,13 +371,19 @@ button {
 
 .gallery-section {
   transition: margin 300ms linear;
+  width: 100%;
 }
 
 .gallery-section.shifted {
-  margin-left: 100px;
+  margin-left: 80px;
 }
 .gallery-section.unshifted {
-  margin-left: 30px;
+  margin-left: 20px;
+}
+
+.Gallery-Grid {
+  width: 100%;
+  box-sizing:border-box;
 }
 
 .section-button {
@@ -336,6 +395,11 @@ button {
   text-overflow: ellipsis;
   overflow: hidden;
   border-bottom: 1px solid var(--darkerLight);
+  color: var(--light);
+  transition: color 500ms;
+}
+.section-button.toggled {
+  color: var(--darkAccent)
 }
 
 
@@ -343,11 +407,9 @@ button {
   position: static;
   display: block;
   width: 100%;
-  background-color: #F3F3F3;
   border-radius: 3px;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid #E0E0E0;
   padding: 0;
 }
 
@@ -374,4 +436,12 @@ button {
   width: 50px;
   position: static;
   display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+.item-edit-button {
+  float: right;
 }
