@@ -11,6 +11,10 @@
   background-color: var(--dark);
 }
 
+p {
+  font-size: .5em
+}
+
 h1, h2, .Gallery-Title {
   font-family: Montserrat, serif;
   font-variant: small-caps;
@@ -29,6 +33,10 @@ html, body{
   text-align: center;
   color: var(--dark);
   margin-left: 20px;
+}
+
+.code-block2 {
+  font-size: 100em;
 }
 
 h1,
@@ -173,93 +181,35 @@ input::placeholder {
   color: var(--dark);
   width: 80vw;
   height: 80vh;
-  overflow-x: hidden;
-  overflow-y: hidden;
+  overflow: hidden;
   padding: 20px;
   z-index: 1000;
 }
 
-.RichEditor-content {
-  margin-top: 20px;
-  height: 50vh;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  text-align: left;
-  border-top: solid 1px var(--darkerLight);
-  padding: 5px;
-}
-
-.Readble-content {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  text-align: left;
-}
-
-.RichEditor-root {
+.SlateEditor {
   background: var(--light);
   font-family: "Raleway", serif;
   font-size: 14px;
+  text-align: left;
+  overflow: hidden;
+  height: 80%;
+  width: 100%;
 }
 
-.RichEditor-editor {
-  cursor: text;
-  font-size: 16px;
-  margin-top: 10px;
+.SlateEditor-Content{
+  overflow-y: auto;
+  overflow-x: hidden;
+  text-align: left;
+  height: inherit;
+  border-top: solid 1px var(--darkerLight);
+  padding: 5px;
 }
-
-.RichEditor-editor .public-DraftEditorPlaceholder-root,
-.RichEditor-editor .public-DraftEditor-content {
-  margin: 0 -15px -15px;
-  padding: 15px;
-}
-
-.RichEditor-editor .public-DraftEditor-content {
-  min-height: 100px;
-}
-
-.RichEditor-hidePlaceholder .public-DraftEditorPlaceholder-root {
-  display: none;
-}
-
-.RichEditor-editor .RichEditor-blockquote {
-  border-left: 5px solid var(--darkerLight);
-  font-family: "Hoefler Text", "Georgia", serif;
-  font-style: italic;
-  margin: 16px 0;
-  padding: 10px 20px;
-}
-
-.RichEditor-editor .public-DraftStyleDefault-pre {
-  background-color: rgba(0, 0, 0, 0.05);
-  font-family: "Oxygen Mono", "Consolas", monospace;
-  font-size: 16px;
-  padding: 20px;
-}
-
-.RichEditor-controls {
-  font-family: "Raleway", sans-serif;
-  font-size: 14px;
-  margin-bottom: 5px;
-  user-select: none;
-}
-
-.RichEditor-styleButton {
-  color: var(--darkerLight);
-  cursor: pointer;
-  margin-right: 16px;
-  padding: 2px 0;
-  display: inline-block;
-}
-
-.RichEditor-activeButton {
-  color: var(--accent);
+.tooltip {
+    z-index: 1000;
 }
 
 /* EditorWindow */
-.EditorWindow-SaveButton {
+.EditorWindow-Button  {
   position: relative;
   float: right;
   width: 50px;
@@ -445,3 +395,18 @@ button {
 .item-edit-button {
   float: right;
 }
+
+.grid-item {
+  overflow: hidden;
+}
+
+.grid-item-text {
+  overflow-y: hidden;
+  width: auto;
+  height: 100%;
+  text-align: left;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.grid-item-text:hover { overflow-y: scroll}

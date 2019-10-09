@@ -1,23 +1,19 @@
 import React from "react";
-import _ from "lodash";
 import RGL, {WidthProvider} from "react-grid-layout";
 import {GridItem} from "./GridItem";
-import {EditorWindow} from "../editor/EditorWindow";
-import {convertFromRaw, convertToRaw} from "draft-js";
-import {ReactComponent as CameraIcon} from "../resources/camera.svg";
-import {ReactComponent as TextIcon} from "../resources/file-text.svg";
-import {ReactComponent as TypeIcon} from "../resources/type.svg";
-
-import {ReactComponent as EditIcon} from "../resources/edit.svg";
-import {ImageWindow} from "../editor/ImageWindow";
-import {propOrDefault} from "../utils";
+import {EditorWindow} from "../windows/EditorWindow";
+import {ReactComponent as CameraIcon} from "../../resources/camera.svg";
+import {ReactComponent as TextIcon} from "../../resources/file-text.svg";
+import {ReactComponent as TypeIcon} from "../../resources/type.svg";
+import {ReactComponent as EditIcon} from "../../resources/edit.svg";
+import {ImageWindow} from "../windows/ImageWindow";
+import {propOrDefault} from "../../utils";
 import classNames from "classnames";
 import Slide from "react-reveal/Slide";
-import Flip from "react-reveal/Flip";
 
-import {layout} from "../data";
-import {deleteDocument, getDocumentAll, getSection, setDocument, setSection} from "../firebase/Database";
-import {SectionWindow} from "../editor/SectionWindow";
+import {layout} from "../../data";
+import {deleteDocument, getDocumentAll, getSection, setDocument, setSection} from "../../firebase/Database";
+import {SectionWindow} from "../windows/SectionWindow";
 
 const uuidv4 = require("uuid/v4");
 
@@ -28,25 +24,20 @@ export class GalleryGrid extends React.Component {
     super(props);
     this.firstChange = true;
     this.user = props.user;
+    this.cols = 50
     this.state = {
       editingTitle: false,
       id: props.id,
-      loaded: false,
       title: props.title,
       isEditing: false,
-      loadingNew: false,
-      cols: 50,
       addingText: false,
       addingImage: false,
       editingOld: false,
-      current: {}
+      recentItem: {}
     };
   }
 
   newId = (id) => {
-    this.setState({
-      loadingNew: false
-    });
     this.firstChange = true;
     this.loadFromDbId(id);
     getSection(this.user, id).then((section) => {
@@ -55,7 +46,6 @@ export class GalleryGrid extends React.Component {
             id: id,
             title: section.get("title"),
             layout: JSON.parse(section.get("layout")),
-            loadingNew: true
           });
     });
   };
@@ -71,22 +61,16 @@ export class GalleryGrid extends React.Component {
   };
 
   componentWillUnmount() {
-    this.logData("componentWillUnmount");
-    console.log("Setting layout...")
-    setSection(this.user, this.state.id, {title: this.state.title, layout: JSON.stringify(this.state.layout)});
+    setSection(this.user, this.state.id,
+        {title: this.state.title, layout: JSON.stringify(this.state.layout)});
   }
-
+  
   componentDidMount() {
-    this.logData("componentDidMount");
-    console.log("Mounted");
     this.initialLoad()
-    this.setState({
-      loadingNew: true
-    })
   };
 
   initialLoad = () => {
-    this.logData("initialLoad");
+    this.loadFromDb()
     getSection(this.user, this.state.id).then((sectionData) => {
       this.setState({
         title: sectionData.get("title"),
@@ -97,85 +81,86 @@ export class GalleryGrid extends React.Component {
         })
       }
     });
-    getDocumentAll(this.user, this.state.id).then((documents) => {
-      let docs = documents.docs.map(doc => {
-        return {title: doc.data().title, content: doc.data().content, image: doc.data().image, id: doc.id}
-      });
-      this.setState({
-        itemsContent: docs,
-        items: docs.length
-      })
-
-    });
   }
 
-
   loadFromDbId = (id) => {
-    this.logData("loadFromDbId");
     getDocumentAll(this.user, id).then((documents) => {
-      let docs = documents.docs.map(doc => {
-        return {title: doc.data().title, content: doc.data().content, image: doc.data().image, id: doc.id}
-      });
-      if (docs === undefined) {
-        docs = []
-      }
       this.setState({
-        itemsContent: docs,
-        items: docs.length
+        itemsContent: documents.docs.map(doc => {
+          let newDoc = doc.data()
+          newDoc["id"] = doc.id
+          return newDoc
+        }),
       })
-    })
+    });
   };
 
-
   loadFromDb = () => {
-    this.logData("loadFromDb");
     this.loadFromDbId(this.state.id)
   };
 
   updateContent = item => {
-    this.logData("updateContent");
-    this.state.current = item;
+    this.state.recentItem = item;
     this.setEditingOld(true);
   };
 
   addItem = item => {
-    this.logData("addItem");
-    console.log("Adding item")
-    const id = item.id || uuidv4();
-    setDocument(this.user, this.state.id, id, {
+    item.id = item.id || uuidv4();
+    setDocument(this.user, this.state.id, item.id, {
       title: propOrDefault(item.title, ""),
-      content: item.content !== undefined ? convertToRaw(item.content) : "",
+      content: propOrDefault(item.content, ""),
       image: propOrDefault(item.image, "")
     });
     this.setState({
+      itemsContent: [item, ...this.state.itemsContent],
       layout: [
         ...this.state.layout,
         {
-          i: id,
-          x: 10,
-          y: 10,
-          w: 50,
-          h: 50,
-          minW: 10,
-          maxW: 10
+          i: item.id,
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 40,
+          maxW: 47,
+          minW: 5,
+          minH: 5
         }
       ]
     })
-    this.loadFromDb();
   };
 
   addText = (title, content) => {
-    this.logData("addText");
     if (title) {
       this.addItem({
         title: title,
         content: content
       });
+      this.setState({
+            recentItem: {}
+          }
+      )
+    } else {
+      this.setState({
+            recentItem: {title: title, content: content}
+          }
+      )
     }
-    this.setAdding(false);
   };
+
+  closeOldWindow = () => {
+    this.setState({
+      recentItem: {}
+    })
+    this.triggerEditing();
+    this.setEditingOld(false);
+  }
+
+  closeWindow = () => {
+    this.setAdding(false);
+    this.triggerEditing();
+  }
+
   addImage = src => {
-    this.logData("addImage");
     if (src) {
       this.addItem({
         image: src
@@ -185,21 +170,30 @@ export class GalleryGrid extends React.Component {
   };
 
   deleteItem = (id) => {
-    this.logData("deleteItem");
     deleteDocument(this.user, this.state.id, id);
-    this.loadFromDb();
+    for( let i = 0; i < this.state.itemsContent.length; i++){
+      if ( this.state.itemsContent[i].id === id) {
+        this.state.itemsContent.splice(i, 1);
+        this.forceUpdate()
+        return
+      }
+    }
   };
 
   updateText = (id, title, content) => {
-    this.logData("updateText");
-    this.setEditingOld(false);
-    setDocument(this.user, this.state.id, id, {
-      title: title,
-      content: convertToRaw(content),
-    });
-    this.loadFromDb();
+    for( let i = 0; i < this.state.itemsContent.length; i++){
+      if (this.state.itemsContent[i].id === id) {
+        this.state.itemsContent[i]["title"] = title;
+        this.state.itemsContent[i]["content"] = content;
+        setDocument(this.user, this.state.id, id, {
+          title: title,
+          content: content,
+        });
+        return
+      }
+    }
+    this.addItem({id: id, title: title, content: content})
   };
-
   updateTitle = (title) => {
     this.setState({title: title, editingTitle: false});
     setSection(this.user, this.state.id, {
@@ -212,10 +206,10 @@ export class GalleryGrid extends React.Component {
   State Setting
    */
 
-  triggerEditing = () =>
+  triggerEditing = () =>{
       this.setState({
         isEditing: !this.state.isEditing
-      });
+      });}
   setAdding = toggle => {
     this.setState({addingText: toggle});
   };
@@ -237,7 +231,11 @@ export class GalleryGrid extends React.Component {
   editingWindow = () =>
       this.state.addingText ? (
           <div className="popup">
-            <EditorWindow onSubmit={this.addText}/>
+            <EditorWindow
+                title={this.state.recentItem.title}
+                content={this.state.recentItem.content}
+                saveContent={this.addText}
+                closeSelf={this.closeWindow}/>
           </div>
       ) : this.state.addingImage ? (
           <div className="popup">
@@ -245,8 +243,11 @@ export class GalleryGrid extends React.Component {
           </div>
       ) : this.state.editingOld ? (
           <div className="popup">
-            <EditorWindow title={this.state.current.title} content={this.state.current.content}
-                          onSubmit={(title, content) => this.updateText(this.state.current.id, title, content)}/>
+            <EditorWindow title={this.state.recentItem.title}
+                          content={this.state.recentItem.content}
+                          closeSelf={this.closeOldWindow}
+                          saveContent={(title, content) => this.updateText(this.state.recentItem.id, title, content)}
+            />
           </div>
       ) : this.state.editingTitle ? (
           <div className="popup">
@@ -255,36 +256,22 @@ export class GalleryGrid extends React.Component {
           </div>
       ) : null;
 
-  logData = (name) => {
-    console.log(name)
-    console.log(this.state.layout)
-    console.log(this.state.itemsContent)
-  }
+
   generateDOM = () => {
-    this.logData("generateDOM");
-    let stuff = this.state.itemsContent;
-    let updateContent = this.updateContent;
-    let editFunc = () => this.state.isEditing;
-    let deleteFunc = this.deleteItem;
-    let contents = _.map(_.range(this.state.itemsContent.length), function (i) {
-      return (
-          <div key={stuff[i].id}>
+    const parent = this
+    return this.state.itemsContent.map(item =>
+          <div key={item.id}>
             <GridItem
-                delete={deleteFunc}
-                editing={editFunc}
-                id={stuff[i].id}
-                title={stuff[i].title}
-                content={
-                  stuff[i].content ? convertFromRaw(stuff[i].content) : false
-                }
-                image={stuff[i].image ? stuff[i].image : false}
-                updateFunc={updateContent}
+                delete={parent.deleteItem}
+                editing={() => parent.state.isEditing}
+                id={item.id}
+                title={item.title}
+                content={item.content}
+                image={item.image ? item.image : false}
+                updateFunc={parent.updateContent}
             />
           </div>
-      );
-    });
-    console.log(contents);
-    return contents;
+    );
   };
 
   render() {
@@ -313,19 +300,18 @@ export class GalleryGrid extends React.Component {
             </button>
           </div>
             <div className={"gallery-content"}>
-
               <h1 className={"Gallery-Title Line"}>
                 <span>{this.state.title}</span>
               </h1>
               {this.state.itemsContent !== undefined ?
                   <ReactGridLayout
                       layout={this.state.layout}
-                      items={this.state.items}
+                      items={this.state.itemsContent.length}
                       isDraggable={this.state.isEditing}
                       isResizable={this.state.isEditing}
                       onLayoutChange={this.onLayoutChange}
                       margin={[10, 4]}
-                      cols={this.state.cols}
+                      cols={this.cols}
                       rowHeight={5}
                   >
                     {this.generateDOM()}

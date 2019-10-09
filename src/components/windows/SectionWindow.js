@@ -1,7 +1,7 @@
 import React from "react";
 import { Grid } from "@material-ui/core";
-import {ReactComponent as SaveIcon} from "../resources/save.svg";
-import {propOrDefault} from "../utils";
+import {ReactComponent as SaveIcon} from "../../resources/save.svg";
+import {propOrDefault} from "../../utils";
 
 export class SectionWindow extends React.Component {
   constructor(props) {

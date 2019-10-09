@@ -2,16 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom";
 import classNames from "classnames";
 import "./styles.css";
-import {GalleryGrid} from "./grid/GalleryGrid";
+import {GalleryGrid} from "./components/grid/GalleryGrid";
 import {ReactComponent as AddIcon} from "./resources/add.svg";
 import {ReactComponent as ExpandIcon} from "./resources/expand.svg";
 import {ReactComponent as UserIcon} from "./resources/user.svg";
-
 import {ReactComponent as ShrinkIcon} from "./resources/shrink.svg";
-import {ReactComponent as DeleteIcon} from "./resources/trash-2.svg";
-
 import {Grid} from "@material-ui/core"
-import {SectionWindow} from "./editor/SectionWindow";
+import {SectionWindow} from "./components/windows/SectionWindow";
 import {sortableContainer, sortableElement, sortableHandle} from 'react-sortable-hoc';
 import arrayMove from 'array-move';
 import {getSectionAll, setSection} from "./firebase/Database";
@@ -20,11 +17,9 @@ const uuidv4 = require("uuid/v4");
 
 const DragHandle = sortableHandle(() => <span>::</span>);
 
-
 const SortableContainer = sortableContainer(({children}) => {
-  return <Grid justify={"column"} className={"SortableList"}>{children}</Grid>;
+  return <Grid className={"SortableList"}>{children}</Grid>;
 });
-
 
 export class App extends React.Component {
 
@@ -39,6 +34,11 @@ export class App extends React.Component {
   }
 
   componentDidMount() {
+    let script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js";
+    script.async = true;
+    script.type = 'text/javascript';
+    document.head.appendChild(script);
     this.loadFromDB()
   }
 
@@ -74,14 +74,13 @@ export class App extends React.Component {
       }
     });
   };
+
   addSection = (title) => {
-    console.log("ADDING" + title);
     if (title !== "") {
       let newId = uuidv4();
       setSection(this.state.user, newId, {title: title, layout: JSON.stringify([])});
-      console.log("ADDED");
+      this.loadFromDB();
     }
-    this.loadFromDB();
   };
 
   onSortEnd = ({oldIndex, newIndex}) => {
@@ -134,7 +133,9 @@ export class App extends React.Component {
 
         <SortableContainer onSortEnd={this.onSortEnd} useDragHandle>
           {this.state.names.map((value, index) => (
-              <this.SortableItem key={`item-${this.state.sections[index]}`} index={index} value={value} id={this.state.sections[index]}/>
+              <this.SortableItem key={`item-${this.state.sections[index]}`}
+                                 index={index} value={value}
+                                 id={this.state.sections[index]}/>
           ))}
         </SortableContainer>
             : null}
@@ -149,4 +150,5 @@ export class App extends React.Component {
 }
 
 const rootElement = document.getElementById("root");
+
 ReactDOM.render(<App/>, rootElement);
